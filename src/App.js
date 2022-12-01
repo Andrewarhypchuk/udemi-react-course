@@ -1,29 +1,49 @@
-import { useState } from 'react';
+import { Fragment, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 
-import Header from './components/Layout/Header';
-import Meals from './components/Meals/Meals';
 import Cart from './components/Cart/Cart';
-import CartProvider from './store/CartProvider';
+import Layout from './components/Layout/Layout';
+import Products from './components/Shop/Products';
+import Notification from './components/UI/Notification';
+import { sendCartData, fetchCartData } from './store/cart-actions';
+
+let isInitial = true;
 
 function App() {
-  const [cartIsShown, setCartIsShown] = useState(false);
+  const dispatch = useDispatch();
+  const showCart = useSelector((state) => state.ui.cartIsVisible);
+  const cart = useSelector((state) => state.cart);
+  const notification = useSelector((state) => state.ui.notification);
 
-  const showCartHandler = () => {
-    setCartIsShown(true);
-  };
+  useEffect(() => {
+    dispatch(fetchCartData());
+  }, [dispatch]);
 
-  const hideCartHandler = () => {
-    setCartIsShown(false);
-  };
+  useEffect(() => {
+    if (isInitial) {
+      isInitial = false;
+      return;
+    }
+
+    if (cart.changed) {
+      dispatch(sendCartData(cart));
+    }
+  }, [cart, dispatch]);
 
   return (
-    <CartProvider>
-      {cartIsShown && <Cart onClose={hideCartHandler} />}
-      <Header onShowCart={showCartHandler} />
-      <main>
-        <Meals />
-      </main>
-    </CartProvider>
+    <Fragment>
+      {notification && (
+        <Notification
+          status={notification.status}
+          title={notification.title}
+          message={notification.message}
+        />
+      )}
+      <Layout>
+        {showCart && <Cart />}
+        <Products />
+      </Layout>
+    </Fragment>
   );
 }
 
